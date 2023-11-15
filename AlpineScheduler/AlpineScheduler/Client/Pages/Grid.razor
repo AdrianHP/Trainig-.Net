@@ -1,0 +1,278 @@
+﻿
+@page "/Grid"
+@inject DialogService DialogService
+
+<div class ="d-flex gap-2 m-2" >
+   <RadzenButton Text="Current Day"      ButtonStyle="ButtonStyle.Secondary" Style="padding:0px 10px 0px 10px"
+                              Click="markDay" />
+    <RadzenButton Text="Current Hour"    ButtonStyle="ButtonStyle.Secondary" Style="padding:0px 10px 0px 10px"
+                              Click="markHour" />
+</div>
+@*<p>Click i: @clickX Click j: @clicky</p>*@
+
+<div>@debug</div>
+<table  class="table">
+    
+      @*row of hours*@
+    <tr >
+        @*This is a blank space, in the following rows the date will be put *@
+        <div style="width:70px" ></div>
+     
+        @for (var i = 0; i < 24; i++){
+            <td  style="padding:0" ><div class="cell cell-time @(pointedColumn==i?"lightGreen":"") "> @(i<10?"0":"")@(i):00</div>  </td>
+        }
+    </tr>
+    
+    @*rows of content*@
+    @{
+        DateTime currentDate = startDate;
+        Job[] currentDayJobs = GetDayJobs(currentDate);
+    }
+    @for (var i = 0; i < @Size; i++)
+    {
+        <tr  >
+            @*date column*@
+            <td><div class = "cell cell-date @( pointedRow==i?"lightGreen":"")">[@(GetWeek(currentDate))] @(currentDate.ToString("ddd dd MMM yy")) </div></td>
+
+            @*the rest of cells will be mapped as a bidimentional array*@
+            @{
+                var j = 0; var tempDate = currentDate; int x = i; 
+                @*make a copy of currentDay and currenntHour to pass as a parameter to the delegate and keep the instant value*@
+            }
+            @while(j<24)
+            {
+                int y = j;
+                int currenthour = j;
+                var currentJob = currentDayJobs[j];
+                @if (currentJob != null)
+                {   
+                    <td id="" class=" "   colspan = "@(currentDayJobs[j].Duration)" >
+                        <div @ondblclick = "()=>OpenEditJobDialog(currentJob)" @onclick="e=>SetClickedCell(x,y)"  class = "cell @(currentDayJobs[j].Team)" >
+                         <p style="max-width:@((56*currentJob.Duration-18).ToString())px" class="truncate" >@currentJob.Name</p>   
+                        </div>  
+                    </td>
+                    j+= currentJob.Duration;
+                }
+                else
+                {
+                    <td  ><div @ondblclick = "()=>OpenSetJobDialog(currentJob,tempDate,currenthour)" @onclick="e=>SetClickedCell(x,y)"  class="cell  @(clickX==x && clicky==y ?"Blue":pointedColumn==j || pointedRow==i?"lightGreen":"Gray")  "> </div> </td>
+                    j += 1;
+                }
+            }
+        </tr>
+        currentDate = currentDate.AddDays(1);
+        currentDayJobs = GetDayJobs(currentDate);
+    }
+</table>
+<style>
+
+</style>
+
+
+@code {
+    @using AlpineScheduler.Shared.Models
+    @using Dialogs
+    @using Microsoft.AspNetCore.SignalR.Client
+    @inject NavigationManager NavigationManager
+    @implements IAsyncDisposable
+
+     private HubConnection? hubConnection;
+
+    string debug = "";
+    bool shouldRender = false;
+
+    @*this will be provided by a service*@
+    List<Job> jobs;
+
+
+    @*How many rows I will show*@
+    int Size = 20;
+
+
+    @*change style*@
+    int pointedRow;
+    int pointedColumn;
+    int clickX;
+    int clicky;
+
+    int startTime;
+    DateTime date;
+    DateTime startDate;
+
+    protected override void OnInitialized()
+    {
+        clickX = -1;
+        clicky = -1;
+        jobs = new List<Job>();
+        startDate = DateTime.Now;
+        pointedRow = -1;
+        pointedColumn = -1;
+        startTime = 1;
+        date = startDate;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+           .WithUrl(NavigationManager.ToAbsoluteUri("/apihub"))
+           .Build();
+
+        await hubConnection.StartAsync();
+        LoadJobs(Size);
+    }
+
+    void markDay()
+    {
+        if (pointedRow == -1)
+            pointedRow = (DateTime.Now.Date - startDate.Date).Days;
+        else
+            pointedRow = -1;
+    }
+    void markHour()
+    {
+        if (pointedColumn == -1)
+            pointedColumn = DateTime.Now.Hour;
+        else
+            pointedColumn = -1;
+    }
+
+    
+
+    async Task OpenSetJobDialog(Job job, DateTime date, int startTime)
+    {
+        var todayJobs = GetDayJobs(date);
+        int maxDuration = 24-startTime;
+        foreach (var item in todayJobs)
+        {
+            if (item!=null &&startTime < item.StartTime)
+                if (maxDuration > item.StartTime - startTime)
+                    maxDuration = item.StartTime - startTime;
+        }
+        DialogOptions dOptions = new DialogOptions() { Width = "400px", Height = "400px", Draggable = true };
+        Dictionary<string, object> parameters = new Dictionary<string, object>() {
+            { "startTime", startTime },
+            {"date",date } ,
+            {"job",job},
+            {"maxDuration",maxDuration}
+        };
+
+        @*AddJob*@
+        if (job == null)
+        {
+
+            Job newJob = await DialogService.OpenAsync<AddJob>("Add Job", parameters, dOptions);
+            if (newJob != null)
+                AddJob(newJob);
+
+
+        }
+        @*Edit Job *@
+        else
+        {
+            Job newJob = await DialogService.OpenAsync<AddJob>("Add Job", parameters, dOptions);
+            if (newJob != null)
+            {
+                EditJob(job, newJob);
+              
+            }
+        }
+    }
+
+    async Task OpenEditJobDialog(Job job )
+    {
+        DialogOptions dOptions = new DialogOptions() { Width = "300px", Height = "300px", Draggable = true };
+        await DialogService.OpenAsync("Edit Job", ds =>
+        @<div  class="d-flex justify-content-around flex-column gap-3">
+            <div  class="d-flex justify-content-around flex-column gap-1">
+                <span>Name: @job.Name </span>
+                <span>Team: @job.Team </span>
+                <span>Date: @job.DateTime.ToString("ddd dd MMM yy") </span>
+                <span>Start: @(job.StartTime<10 ? $"0{job.StartTime}:00" : $"{job.StartTime}:00") </span>
+                <span>Duration: @job.Duration hoours </span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <RadzenButton Text="Edit"   Icon="edit"   ButtonStyle="ButtonStyle.Success" Style="width:100px;padding:1px"
+                              Click="async () =>{ds.Close(); await OpenSetJobDialog(job,job.DateTime,job.StartTime);}" />
+                <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger"   Style="width:100px;padding:1px"
+                              Click="() =>{  ds.Close(); DeleteJob(job); ;clickX=-1;clicky=-1;}"/>
+            </div>
+    </div>
+    ,dOptions);
+    }
+
+    public void AddJob(Job job)
+    {
+        jobs.Add(job);
+        hubConnection.InvokeAsync("AddJob", job);
+    }
+
+    public void EditJob(Job current, Job update)
+    {
+        jobs.Remove(current);
+        jobs.Add(update);
+        StateHasChanged();
+        hubConnection.InvokeAsync("EditJob", current,update);
+    }
+
+    public void DeleteJob(Job job)
+    {
+        jobs.Remove(job);
+        hubConnection.InvokeAsync("DeleteJob", job);
+    }
+
+    public async void LoadJobs(int range)
+    {
+        if (hubConnection is not null)
+        {
+            List<Job> result = await hubConnection.InvokeAsync<List<Job>>("LoadJobs", range);
+            jobs = result;
+            startDate = jobs.Count > 0 ? jobs[0].DateTime : DateTime.Now;
+            pointedRow = (DateTime.Now.Date - startDate.Date).Days;
+            pointedColumn = DateTime.Now.Hour;
+            startTime = 1;
+            date = startDate;
+            StateHasChanged();
+        }
+    }
+
+
+    void SetClickedCell( int x,int y)
+    {
+        clickX = x;
+        clicky =y;
+    }
+
+    int GetWeek(DateTime currentDate)
+    {
+        DateTime d = new DateTime(currentDate.Year, 1, 1);
+        int rest = (currentDate - d).Days;
+
+        return rest %7==0 ? rest/7:rest/7+1;
+    }
+
+    @*Returs a Job[24] in position i contains the job that starts at time i on that day, null in other case  *@
+    Job[] GetDayJobs(DateTime date)
+    {
+        Job[]result = new Job[24];
+        foreach (var job in jobs)
+            if (date.Date == job.DateTime.Date)
+                result[job.StartTime] = job;
+        return result;
+    }
+
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
+
+
+
+
+

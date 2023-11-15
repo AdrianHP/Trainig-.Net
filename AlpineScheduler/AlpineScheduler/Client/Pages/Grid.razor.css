@@ -1,0 +1,79 @@
+﻿.table {
+    box-shadow: 2px 10px 5px lightgray;
+    border: 3px solid #4f7b83;
+    border-collapse: inherit;
+    border-radius: 12px;
+    padding-bottom: 8px;
+    font-family: Arial, Helvetica, sans-serif;
+    max-width:1600px;
+
+}
+
+.cell {
+    box-shadow: 2px 10px 5px lightgray !important;
+    display: flex;
+    
+    align-items: center;
+    border: 1px solid #4f7b83;
+    /*border-radius: 12px;*/
+    height: 40px;
+    font-weight: 400;
+    cursor: pointer;
+}
+.truncate {
+    white-space: nowrap;
+    text-overflow: ellipsis !important;
+    overflow: hidden;
+    text-align:end;
+    margin-bottom:0;
+}
+
+
+
+.cell-time {
+    max-height: 20px;
+   /* border-radius: 0px 0px 12px 12px;*/
+    border-top: none;
+    margin-top: auto;
+    color: green;
+}
+
+.cell-date {
+    width: 120px;
+    height: 40px;
+    padding: 4px !important;
+    letter-spacing: -1.2px;
+    font-size: 14px;
+   /* border-radius: 12px;
+    border-radius: 0px 12px 12px 0px;*/
+    border-left: none;
+    color: blue;
+}
+
+.lightGreen {
+    background-color: lightgreen !important;
+}
+
+.Gray {
+    background-color: lightgray !important;
+}
+
+.Brown {
+    background-color: #A1887F !important;
+}
+
+.Green {
+    background-color: #AED581 !important;
+}
+
+.Orange {
+    background-color: #FFB74D !important;
+}
+
+.Pink {
+    background-color: #F06292 !important;
+}
+
+.Blue{
+    background-color:blue !important;
+}

@@ -1,0 +1,172 @@
+﻿@using System.Threading
+@using System.IO.Compression
+@using System.Net.Http
+@using System.Net.Http.Json
+@using System.Text
+@using System.Threading.Tasks
+@inject HttpClient Http;
+
+
+
+<div class="button-div">
+    
+   
+
+    <button @onclick="ButtonAction" class = "button @(!_isRunning? "button-run":"button-stop") ">
+        @if (!_isRunning)
+        {
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
+                <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+            </svg>
+            <div>Run</div>
+
+        }
+
+        @if (_isRunning)
+        {
+            <svg  xmlns="http://www.w3.org/2000/svg" width="20" height="14" fill="currentColor" class=" " viewBox="0 0 16 16">
+                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2z"/>
+            </svg>
+
+            <div>Stop</div>
+        }
+    </button> 
+    <div>@_text</div>
+
+
+</div>
+<div>
+    @m
+</div>
+
+
+
+@code
+{
+    [Parameter] public string ProjectName { get; set; }
+    string _text;
+    bool _isRunning;
+    int _pid;
+   
+   
+    
+    string m;
+
+
+    protected override void OnInitialized()
+    {
+       
+        _text = "Execute project '" + ProjectName + "' in the console";
+        _isRunning = false;
+       
+    }
+
+    void ButtonAction()
+    {
+        if (_isRunning)
+            Stop();
+        else
+            Run();
+    }
+
+    async Task Run()
+    {   
+         string url = "http://127.0.0.1:5000/runscript?path=/"+ProjectName;
+        using (var client = new HttpClient())
+        {
+            client.BaseAddress = new Uri(url);
+            try
+            {
+                var result = await client.GetStringAsync(url);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+          
+           
+        }
+
+
+         // client.GetStringAsync(_prefix_query_add_process + ProjectName);  use the http service with the query
+        //try
+        //{
+        //    var response = await Http.
+        //}
+        //catch (Exception e)
+        //{
+        //    Console.WriteLine(e);
+        //    var c = e.Message;
+            
+        //    //var m = response.StatusCode;
+        //    //var res = await response.Content.ReadAsStringAsync();
+        //    _isRunning = true;
+        //    _text = $"Stop project '{ProjectName}' ";
+            
+        //} 
+        
+
+    }
+
+    async Task Stop()
+    {
+        string _prefix_query_kill_process = "http://127.0.0.1:5000/killTask/";
+    // client.GetStringAsync(_prefix_query_kill_process + _pid);  use the http service with the query
+        _isRunning = false;
+        _text = $"Execute project '{ProjectName}' in the console";
+    }
+
+    void CheckState()
+    {
+        string _prefix_query_status = "http://127.0.0.1:5000/currentStatus/";
+       /* response =  client.GetStringAsync(_prefix_query_status + _pid);  use the http service with the query
+        
+       if (_isRunning)
+       {
+            while (true)
+             {
+             response =  client.GetStringAsync(_prefix_query_status + _pid);  use the http service with the query
+                 if(response ["is_running" == false)
+                   break;
+             }
+       }
+       _isRunning = false
+       _text = "Execute project '" + ProjectName + "' in the console";
+        */
+    }
+
+}
+
+
+
+
+<style>
+    .button-div{
+        display: flex;
+        background-color: rgba(122, 220, 174, 0.46);
+        height: 50px;
+        border-radius: 8px;
+        align-items: center;
+        padding: 10px;
+        gap: 8px;
+    }
+    .button {
+        display: flex;
+        align-items: center;
+        border-radius: 8px;
+        gap: 5px;
+        border: none;
+        padding:4px 14px;
+        max-width: 82px;
+    }
+    .button-run {
+        color: white;
+        background-color: green;
+    }
+    .button-stop {
+        gap: 5px;
+        color: white;
+        background-color: darkgoldenrod;
+    }
+</style>

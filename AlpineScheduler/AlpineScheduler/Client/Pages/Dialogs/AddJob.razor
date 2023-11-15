@@ -1,0 +1,108 @@
+﻿@page "/Dialogs/AddJob"
+@inject Radzen.DialogService ds
+@using Radzen
+
+<div  class="dialog" >
+
+
+    <div class="d-flex justify-content-between gap-3 align-items-center">
+        <h5>Name</h5>
+         <div class="col">
+        <RadzenTextBox Name="name" @bind-Value=@name  Class="w-100" />
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between gap-3 align-items-center">
+        <h5>Team</h5>
+        <RadzenDropDown @bind-Value=@team AllowClear="true" TValue="string" Class="w-100" Data=@teams/>
+    </div>
+
+
+    <div class = "d-flex flex-column gap-1">
+    <h5>@(date.ToString("ddd dd MMM yy")) &nbsp;&nbsp;&nbsp;&nbsp; Start: @(startTime<10 ? $"0{startTime}:00" : $"{startTime}:00")  </h5>
+    <div  class="d-flex justify-content-between gap-3 align-items-center">
+        <h5>Duration</h5>
+         <RadzenNumeric @bind-Value=@duration  TValue="int" Min="1" Max="@(maxDuration)"  Class="w-100" />
+         
+    </div>
+    </div>
+
+    <div class=" d-flex w-100 justify-content-around" >
+        <RadzenButton Icon="save" Text="Save"  ButtonStyle="ButtonStyle.Success" Click="()=>SaveAction()" />
+        <RadzenButton Icon="cancel" Text="Cancel"  Click="() => CloseAction()"   ButtonStyle="ButtonStyle.Light" Class="mr-1" />
+    </div>        
+</div>
+
+
+<style>
+.dialog{
+    width:100%;
+    padding:5px;
+    width:100%;
+    height:300px;
+    
+    display:flex;
+    flex-direction:column;
+    justify-content: space-between;
+}
+</style>
+
+
+@code {
+    @using AlpineScheduler.Shared.Models
+    [Parameter] public int startTime { get; set; }
+    [Parameter] public DateTime date { get; set; }
+    [Parameter] public Job job { get; set; }
+    [Parameter] public int maxDuration{ get; set; }
+
+    string name;
+    string team;
+    int duration;
+
+    string[] teams = { "Brown","Green", "Orange","Pink" };
+
+
+    protected override void OnInitialized()
+    {
+        if (job != null)
+        {
+            startTime = job.StartTime;
+            date = job.DateTime;
+            name = job.Name;
+            duration= job.Duration;
+            team = job.Team;
+        }
+        else
+        {
+            duration= 1;
+        }
+
+    }
+
+    void SaveAction()
+    {
+        if(name!="" &&name!=null && teams.Contains(team) && duration>0)
+        {
+            Job job = new Job();
+            job.DateTime = date;
+            job.Duration = duration;
+            job.Name = name;
+            job.Team = team;
+            job.StartTime = startTime;
+            ds.Close(job);
+        }
+    }
+
+    void CloseAction()
+    {
+        ds.Close();
+    }
+
+   
+
+
+
+  
+
+  
+}

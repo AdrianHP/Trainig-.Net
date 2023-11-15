@@ -1,0 +1,27 @@
+﻿.button-div{
+    display: flex;
+    background-color: rgba(122, 220, 174, 0.46);
+    height: 50px;
+    border-radius: 8px;
+    align-items: center;
+    padding: 10px;
+    gap: 8px;
+}
+.button {
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    gap: 5px;
+    border: none;
+    padding:4px 14px;
+    max-width: 82px;
+}
+.button-run {
+    color: white;
+    background-color: green;
+}
+.button-stop {
+    gap: 5px;
+    color: white;
+    background-color: darkgoldenrod;
+}
